@@ -7,7 +7,13 @@ Player::Player(int hp) : health(hp) {}
 void Player::takeDamage(int dmg) {
     health -= dmg;
     if (health < 0) health = 0;
-    std::cout << "[-] Вы получили урон. Здоровье: " << health << "/3" << std::endl;
+    std::cout << "[-] Вы получили урон " << dmg << ". Здоровье: " << health << "/3" << std::endl;
+}
+
+void Player::heal(int amount) {
+    health += amount;
+    if (health > 3) health = 3;
+    std::cout << "[+] Вы восстановили " << amount << " здоровья. Здоровье: " << health << "/3" << std::endl;
 }
 
 bool Player::isAlive() const { return health > 0; }
@@ -31,7 +37,6 @@ void Player::showInventory() const {
 
     std::cout << "\n=== ИНВЕНТАРЬ ===" << std::endl;
     for (const auto& item : inventory) {
-        std::cout << "- ";
         item->inspect();
     }
     std::cout << "Здоровье: " << health << "/3" << std::endl;
@@ -55,4 +60,23 @@ int Player::countKeyItems() const {
         if (item->getIsKey()) count++;
     }
     return count;
+}
+
+void Player::useItem(const std::string& name) {
+    for (const auto& item : inventory) {
+        if (item->getName() == name) {
+            item->use();
+            return;
+        }
+    }
+    std::cout << "У вас нет предмета: " << name << std::endl;
+}
+
+Item* Player::getItem(const std::string& name) {
+    for (auto& item : inventory) {
+        if (item->getName() == name) {
+            return item.get();
+        }
+    }
+    return nullptr;
 }

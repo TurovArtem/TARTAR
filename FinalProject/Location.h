@@ -3,19 +3,21 @@
 #include <vector>
 #include <map>
 #include <memory>
-#include "Item.h"
+
+class Item;  // Предварительное объявление
 
 class Location {
 private:
     std::string name;
     std::string description;
-    std::vector<std::unique_ptr<Item>> items;
+    std::vector<std::unique_ptr<Item>> items;  // unique_ptr<Item> напрямую
     std::map<std::string, Location*> exits;
 
 public:
     Location(const std::string& n, const std::string& d);
 
     void showInfo() const;
+    void showDetailed() const;
 
     void addItem(std::unique_ptr<Item> item);
     std::unique_ptr<Item> takeItem(const std::string& name);
