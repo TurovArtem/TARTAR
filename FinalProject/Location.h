@@ -4,13 +4,13 @@
 #include <map>
 #include <memory>
 
-class Item;  // Предварительное объявление
+class GameObject;  // Предварительное объявление
 
 class Location {
 private:
     std::string name;
     std::string description;
-    std::vector<std::unique_ptr<Item>> items;  // unique_ptr<Item> напрямую
+    std::vector<std::unique_ptr<GameObject>> items;  // Храним GameObject*
     std::map<std::string, Location*> exits;
 
 public:
@@ -19,8 +19,8 @@ public:
     void showInfo() const;
     void showDetailed() const;
 
-    void addItem(std::unique_ptr<Item> item);
-    std::unique_ptr<Item> takeItem(const std::string& name);
+    void addItem(std::unique_ptr<GameObject> item);
+    std::unique_ptr<GameObject> takeItem(const std::string& name);
     bool hasItem(const std::string& name) const;
     void showItems() const;
 

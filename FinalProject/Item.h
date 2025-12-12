@@ -1,28 +1,27 @@
 #pragma once
-#include <string>
-#include <iostream>
+#include "GameObject.h"
 
-class Item {
+// Базовый класс для предметов
+class Item : public GameObject {
 private:
-    std::string name;
-    std::string description;
     bool isKey;
     bool used;
-    static int totalItems;
+    static int totalItems;  // Статический член
 
 public:
     Item(const std::string& n, const std::string& d, bool key = false);
-    virtual ~Item() = default;
 
-    virtual void inspect() const;
+    // Переопределение виртуальных методов
+    void inspect() const override;
+    void use() override;
+    void use(int value) override;
 
-    void use();
-    void use(int value);
+    // Перегруженные методы
+    void use(const std::string& target);
 
-    std::string getName() const;
-    std::string getDescription() const;
     bool getIsKey() const;
     bool isUsed() const;
+    bool isKeyItem() const override;
 
     static int getTotalItems();
 };

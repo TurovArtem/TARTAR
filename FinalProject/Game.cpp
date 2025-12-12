@@ -1,4 +1,6 @@
 ﻿#include "Game.h"
+#include "Item.h"
+#include "Consumable.h"
 #include <iostream>
 #include <sstream>
 #include <cstdlib>
@@ -79,7 +81,9 @@ void Game::initGame() {
         "Здесь принимаются окончательные решения."
     );
 
-    // Создаем предметы как unique_ptr<Item>
+    // Создаем предметы разных типов с использованием наследования
+
+    // Обычный предмет (GameObject -> Item)
     locations[0]->addItem(std::make_unique<Item>(
         "планшет",
         "Запись: 'Как* Имп*ерия могла соз**дать подобное?! Эта** участь хуже смерти *****\n"
@@ -87,13 +91,14 @@ void Game::initGame() {
         false
     ));
 
-    locations[0]->addItem(std::make_unique<Item>(
+    // Расходуемый предмет (GameObject -> Item -> Consumable)
+    locations[0]->addItem(std::make_unique<Consumable>(
         "аптечка",
-        "Стандартная аптечка. Может восстановить здоровье.",
-        true
+        "Стандартная аптечка.",
+        2  // Восстанавливает 2 здоровья
     ));
 
-    // Ключ доступа находится в реакторном зале
+    // Ключевой предмет (GameObject -> Item)
     locations[1]->addItem(std::make_unique<Item>(
         "ключ доступа",
         "Ключ-карта старшего техника. На обороте: 'ОНИ ЛЮДИ. МЫ - МОНСТРЫ.'\n"
@@ -101,6 +106,7 @@ void Game::initGame() {
         true
     ));
 
+    // Ключевой предмет с особым описанием
     locations[1]->addItem(std::make_unique<Item>(
         "дневник техника",
         "Последняя запись: 'TARTAR - это тюрьма питающаяся людскими муками, они погружены в сон, длящийся столетиями, они претерпевают все муки известные человечеству.\n"
@@ -110,6 +116,7 @@ void Game::initGame() {
         true
     ));
 
+    // Особый ключевой предмет с перегруженным использованием
     locations[2]->addItem(std::make_unique<Item>(
         "код 734",
         "Код доступа к главной консоли: 0734.\n"
@@ -216,6 +223,7 @@ void Game::processCommand(const std::string& cmd) {
         std::cout << "Ключевые предметы: " << player.countKeyItems() << "/3" << std::endl;
         std::cout << "Правда известна: " << (knowsTruth ? "ДА" : "НЕТ") << std::endl;
         std::cout << "Контрольный центр: " << (controlCenterLocked ? "ЗАКРЫТ" : "ОТКРЫТ") << std::endl;
+        std::cout << "Всего предметов создано: " << Item::getTotalItems() << std::endl;
         std::cout << "===============" << std::endl;
     }
     else if (action == "использовать" || action == "use") {
@@ -234,15 +242,34 @@ void Game::processCommand(const std::string& cmd) {
             if (itemName == "ключ доступа" && currentLocation->getName() == "РЕАКТОРНЫЙ ЗАЛ") {
                 useKey();
             }
-            // Использование других предметов
+            // Использование кода 734 с параметром (демонстрация перегрузки)
+            else if (itemName == "код 734") {
+                if (currentLocation->getName() == "КОНТРОЛЬНЫЙ ЦЕНТР") {
+                    // Используем перегруженный метод use(int)
+                    player.useItem(itemName, 734);
+                    showEndingChoice();
+                }
+                else {
+                    std::cout << "Здесь некуда использовать код 734." << std::endl;
+                }
+            }
+            // Использование аптечки (расходуемый предмет)
             else if (itemName == "аптечка") {
+                // Используем полиморфный метод use()
                 player.useItem(itemName);
-                player.heal(2);
+                // Ищем предмет для применения эффекта
+                if (Consumable* consumable = dynamic_cast<Consumable*>(player.getItem(itemName))) {
+                    player.heal(consumable->getHealingValue());
+                }
             }
-            else if (itemName == "код 734" && currentLocation->getName() == "КОНТРОЛЬНЫЙ ЦЕНТР") {
-                player.useItem(itemName);
-                showEndingChoice();
+            // Использование других предметов с указанием цели (демонстрация перегрузки)
+            else if (itemName == "планшет" || itemName == "дневник техника") {
+                std::cout << "На что использовать предмет? (например, 'себя', 'консоль'): ";
+                std::string target;
+                std::getline(std::cin, target);
+                player.useItem(itemName, target);
             }
+            // Обычное использование предметов
             else {
                 player.useItem(itemName);
             }
@@ -374,7 +401,7 @@ void Game::showEndingChoice() {
     typewriter("ЭНЕРГИЯ: 94%", 30);
     typewriter("ОБСЛУЖИВАЕМЫЕ ОБЪЕКТЫ: 12 ГОРОДОВ ИМПЕРИИ", 30);
     typewriter("ЗАКЛЮЧЕННЫЕ: 2,347,891", 30);
-    typewriter("ПРОИЗВОДСТВО СТРАХА: 98.7%", 30);
+    typewriter("ПРОИЗВОДСТВО ЭНЕРГИИ: 98.7%", 30);
 
     std::cout << "\n═══════════════════════════════════════════════════\n";
     typewriter("ВЫ ПОДКЛЮЧИЛИ КОД 734 К ГЛАВНОЙ КОНСОЛИ.", 40);
@@ -529,6 +556,7 @@ void Game::showEnding() const {
     std::cout << "Собрано предметов: " << player.countKeyItems() << "/3" << std::endl;
     std::cout << "Знание правды: " << (knowsTruth ? "ДА" : "НЕТ") << std::endl;
     std::cout << "Действий выполнено: " << actions << std::endl;
+    std::cout << "Всего предметов создано в игре: " << Item::getTotalItems() << std::endl;
     std::cout << "===================" << std::endl;
 
     std::cout << "\n[Нажмите Enter для выхода...]";
@@ -542,6 +570,7 @@ void Game::showHelp() const {
     std::cout << "осмотреть           - подробно осмотреть локацию" << std::endl;
     std::cout << "инвентарь           - показать инвентарь" << std::endl;
     std::cout << "использовать [предмет] - использовать предмет из инвентаря" << std::endl;
+    std::cout << "использовать [предмет] [цель] - использовать предмет на цель" << std::endl;
     std::cout << "помощь              - показать команды" << std::endl;
     std::cout << "цель                - показать цель" << std::endl;
     std::cout << "статус              - показать статус" << std::endl;

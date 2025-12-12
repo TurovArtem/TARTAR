@@ -1,6 +1,8 @@
 #pragma once
 #include "Player.h"
 #include "Location.h"
+#include "Item.h"
+#include "Consumable.h"
 #include <array>
 #include <memory>
 #include <thread>
@@ -15,7 +17,7 @@ private:
     int ending;
     int actions;
     bool knowsTruth;
-    bool controlCenterLocked;  // Новое: статус двери в контрольный центр
+    bool controlCenterLocked;
 
     void typewriter(const std::string& text, int delay = 30) const;
     void pause(int seconds = 1) const;
@@ -27,7 +29,7 @@ private:
     void showObjective() const;
     void takeItem(const std::string& itemName);
     void move(const std::string& dir);
-    void useKey();  // Новый метод для использования ключа
+    void useKey();
     void showEndingChoice();
     void checkEnding();
     void showEnding() const;

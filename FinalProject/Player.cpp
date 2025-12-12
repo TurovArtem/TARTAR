@@ -1,4 +1,6 @@
 ﻿#include "Player.h"
+#include "Item.h"
+#include "Consumable.h"
 #include <iostream>
 #include <algorithm>
 
@@ -19,9 +21,10 @@ void Player::heal(int amount) {
 bool Player::isAlive() const { return health > 0; }
 int Player::getHealth() const { return health; }
 
-bool Player::addItem(std::unique_ptr<Item> item) {
+bool Player::addItem(std::unique_ptr<GameObject> item) {
     if (isInventoryFull()) {
-        std::cout << "[-] Инвентарь полон!" << std::endl;
+        std::cout << "[-] Инвентарь полон! (" << getInventorySize()
+            << "/" << MAX_INVENTORY << ")" << std::endl;
         return false;
     }
     inventory.push_back(std::move(item));
@@ -35,10 +38,14 @@ void Player::showInventory() const {
         return;
     }
 
-    std::cout << "\n=== ИНВЕНТАРЬ ===" << std::endl;
+    std::cout << "\n=== ИНВЕНТАРЬ (" << getInventorySize()
+        << "/" << MAX_INVENTORY << ") ===" << std::endl;
+
+    // Полиморфный вызов inspect() для каждого предмета
     for (const auto& item : inventory) {
         item->inspect();
     }
+
     std::cout << "Здоровье: " << health << "/3" << std::endl;
     std::cout << "=================" << std::endl;
 }
@@ -51,32 +58,70 @@ bool Player::hasItem(const std::string& name) const {
 }
 
 bool Player::isInventoryFull() const {
-    return inventory.size() >= MAX_INVENTORY;
+    return getInventorySize() >= MAX_INVENTORY;
 }
 
 int Player::countKeyItems() const {
     int count = 0;
     for (const auto& item : inventory) {
-        if (item->getIsKey()) count++;
+        // Полиморфный вызов isKeyItem()
+        if (item->isKeyItem()) {
+            count++;
+        }
     }
     return count;
 }
 
 void Player::useItem(const std::string& name) {
-    for (const auto& item : inventory) {
+    for (auto& item : inventory) {
         if (item->getName() == name) {
-            item->use();
+            item->use();  // Полиморфный вызов
             return;
         }
     }
     std::cout << "У вас нет предмета: " << name << std::endl;
 }
 
-Item* Player::getItem(const std::string& name) {
+void Player::useItem(const std::string& name, int value) {
+    for (auto& item : inventory) {
+        if (item->getName() == name) {
+            item->use(value);  // Полиморфный вызов перегруженного метода
+            return;
+        }
+    }
+    std::cout << "У вас нет предмета: " << name << std::endl;
+}
+
+void Player::useItem(const std::string& name, const std::string& target) {
+    for (auto& item : inventory) {
+        // Проверяем, является ли предмет наследником Item
+        if (item->getName() == name) {
+            // Динамическое приведение типа для доступа к методу use(target)
+            if (Item* specificItem = dynamic_cast<Item*>(item.get())) {
+                specificItem->use(target);
+            }
+            else {
+                std::cout << "Этот предмет нельзя использовать таким образом." << std::endl;
+            }
+            return;
+        }
+    }
+    std::cout << "У вас нет предмета: " << name << std::endl;
+}
+
+GameObject* Player::getItem(const std::string& name) {
     for (auto& item : inventory) {
         if (item->getName() == name) {
             return item.get();
         }
     }
     return nullptr;
+}
+
+int Player::getInventorySize() const {
+    return static_cast<int>(inventory.size());
+}
+
+int Player::getMaxInventorySize() {
+    return MAX_INVENTORY;
 }

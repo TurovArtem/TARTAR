@@ -1,5 +1,6 @@
 ﻿#include "Location.h"
 #include "Item.h"
+#include "Consumable.h"
 #include <iostream>
 
 Location::Location(const std::string& n, const std::string& d)
@@ -27,12 +28,9 @@ void Location::showDetailed() const {
 
     if (!items.empty()) {
         std::cout << "\n▐ ПРЕДМЕТЫ ДЛЯ СБОРА:" << std::endl;
-        for (size_t i = 0; i < items.size(); ++i) {
-            std::cout << "  • " << items[i]->getName();
-            if (i < items.size() - 1) {
-                std::cout << ",";
-            }
-            std::cout << std::endl;
+        for (const auto& item : items) {
+            std::cout << "  • ";
+            item->inspect();  // Полиморфный вызов
         }
     }
 
@@ -47,14 +45,14 @@ void Location::showDetailed() const {
     std::cout << "═══════════════════════════════════════════════════" << std::endl;
 }
 
-void Location::addItem(std::unique_ptr<Item> item) {
+void Location::addItem(std::unique_ptr<GameObject> item) {
     items.push_back(std::move(item));
 }
 
-std::unique_ptr<Item> Location::takeItem(const std::string& name) {
+std::unique_ptr<GameObject> Location::takeItem(const std::string& name) {
     for (auto it = items.begin(); it != items.end(); ++it) {
         if ((*it)->getName() == name) {
-            std::unique_ptr<Item> item = std::move(*it);
+            std::unique_ptr<GameObject> item = std::move(*it);
             items.erase(it);
             return item;
         }
@@ -73,11 +71,8 @@ void Location::showItems() const {
     if (!items.empty()) {
         std::cout << "Предметы: ";
 
-        // Вывод предметов с запятыми между ними
         for (size_t i = 0; i < items.size(); ++i) {
             std::cout << items[i]->getName();
-
-            // Добавляем запятую, если это не последний предмет
             if (i < items.size() - 1) {
                 std::cout << ", ";
             }
@@ -99,11 +94,8 @@ void Location::showExits() const {
     if (!exits.empty()) {
         std::cout << "Выходы: ";
 
-        // Также можно добавить запятые между выходами для единообразия
         for (auto it = exits.begin(); it != exits.end(); ++it) {
             std::cout << "[" << it->first << "]";
-
-            // Добавляем запятую, если это не последний выход
             auto next = it;
             ++next;
             if (next != exits.end()) {
